@@ -16,10 +16,8 @@ if __name__ == "__main__":
     with open(args.source_file, 'r') as f:
         source_file = f.readlines()
 
-#    print(TokenType.token_regex())
-
-        for i,line in enumerate(source_file):
-            tokens.append(tokenize(line, i))
+    for i,line in enumerate(source_file):
+        tokens.append(tokenize(line, i))
 
         # tokens = map(lambda line: tokenize(line), contents)
         # print(list(tokens))
