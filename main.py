@@ -1,11 +1,12 @@
 from argparse import *
-#from scanner import tokenize
 from scanner import *
+from instructions import *
+
 
 parser = ArgumentParser(description="Shitty MIPS Assembler")
 
 parser.add_argument('source_file') 
-parser.add_argument('-c', '--output', default = "output.bin", help = "Output file name") 
+parser.add_argument('-o', '--output', default = "output.bin", help = "Output file name") 
 args = parser.parse_args()
 
 
@@ -18,8 +19,3 @@ if __name__ == "__main__":
 
     for i,line in enumerate(source_file):
         tokens.append(tokenize(line, i))
-
-        # tokens = map(lambda line: tokenize(line), contents)
-        # print(list(tokens))
-    
-        

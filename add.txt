@@ -1,0 +1,16 @@
+#shitty test program
+
+li $r0, 0
+li $r1, 50
+
+loop: beq $r0, $r1, end
+
+	add $r2, $r2, $r4
+	sllv $r5, $r2, $r0
+	
+	addi $r0, $r0, 1
+	j loop
+
+end:
+	sw $r0, 0($r5)
+	#yay

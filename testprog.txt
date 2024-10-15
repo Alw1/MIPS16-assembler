@@ -1,0 +1,22 @@
+	li $r0, 1
+    beq $r0, $r0, base_case
+	add $r0, $r0, $r0    
+	sub $r0, $r0, $r0    
+	sll $r1, $r6, $r7
+	lsl $r0, $r1, $r2
+    addi $r3, $r3, -8       
+	SUB $r1 , $r3 , $r0    
+    sw $r7, 4($r3)         
+shit:  sw $r0, 0($r3)        
+    j LABEL 
+    addi $r0, $r0, -1      
+    beq $r0, $r1, FUCK 
+    jal factorial
+    
+    lw $r0, 0($r3)        
+    lw $r5, 4($r3)         
+    addi $r3, $r3, 8        
+
+    mul $r0, $r0, $r0    
+    
+
