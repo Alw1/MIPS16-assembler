@@ -3,13 +3,24 @@
 li $r0, 0
 li $r1, 50
 
+shit:
+
 loop: beq $r0, $r1, end
 
-	add $r2, $r2, $r4
+	add $r2, $r2, $r4  add $r2, $r2, $r4
 	sllv $r5, $r2, $r0
 	
 	addi $r0, $r0, 1
-	j loop
+
+l:	SUBC $r0, $r1, $r6
+
+p:	j loop
+
+
+	addi $r2, $r2, 7
+	NOP
+	NOP
+	lw $r2, 0($r4)
 
 end:
 	sw $r0, 0($r5)

@@ -1,0 +1,32 @@
+# set r0 ==  0x0040 (64)
+addi $r0, $r0, 64
+
+# set r1 == 0x1010 (4112)
+
+addi $r0, $r0, 128
+addi $r0, $r0, 128
+addi $r0, $r0, 1
+sll $r0, $r0, 4   #256 << 4 == 4112
+
+# set r2 = 0x000F (15)
+addi $r0, $r0, 15
+
+# set r3 = 0x00F0 (240)
+addi $r0, $r0, 15
+sll $r0, $r0, 4
+
+# set r4 = 0x0000 (0)
+sub $r4, $r4, $r4
+
+# set r5 = 0x0010 (16)
+addi $r0, $r0, 16
+
+# set r6 = 0x0005 (5)
+addi $r6, $r6, 5
+
+
+loop: beq $r6, $r6, end			# while ($r6 > 0) 
+	  addi $r6, $r6, -1			# r6 -= 1
+	  lw $r4, 0($r5)			# r4 = Mem[$r5]
+
+
