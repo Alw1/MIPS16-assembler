@@ -7,6 +7,7 @@ def instructionize(line, line_num):
     formats = [
         InstructionFormat.LABEL,
         InstructionFormat.ARITHLOG,
+        InstructionFormat.ARITHLOGI,
         InstructionFormat.BRANCH,
         InstructionFormat.NOP,
         InstructionFormat.LOADIMM,

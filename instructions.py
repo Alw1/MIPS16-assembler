@@ -21,16 +21,55 @@ class Instruction():
         instr_binary = "000000000000000"
         match self.format:
             case InstructionFormat.ARITHLOG:
-                print(Opcodes[self.match['op']].value)
-            case InstructionFormat.LOADIMM:
-                pass
+                op = Opcodes.getVal(self.match['op'])
+                funct = Funct.getVal(self.match['op'])
+                rd = Registers.getVal(self.match['rd'][1:])
+                rs = Registers.getVal(self.match['rs'][1:])
+                rt = Registers.getVal(self.match['rt'][1:])
+
+                instr_binary = f'{op:03b}{rs:03b}{rt:03b}{rd:03b}{funct:04b}'
+            case InstructionFormat.ARITHLOGI:
+                op = Opcodes.getVal(self.match['op'])
+                rs = Registers.getVal(self.match['rs'][1:])
+                rt = Registers.getVal(self.match['rt'][1:])
+                imm = int(self.match['imm'])
+
+                instr_binary = f'{op:03b}{rs:03b}{rt:03b}{imm:07b}'
             case InstructionFormat.LOADSTORE:
-                pass
+                op = Opcodes.getVal(self.match['op'])
+                rs = Registers.getVal(self.match['rs'][1:])
+                rt = Registers.getVal(self.match['rt'][1:])
+                imm = int(self.match['imm'])
+
+                instr_binary = f'{op:03b}{rs:03b}{rt:03b}{imm:07b}'
             case InstructionFormat.BRANCH:
-                pass
+                op = Opcodes.getVal(self.match['op'])
+                rs = Registers.getVal(self.match['rs'][1:])
+                rt = Registers.getVal(self.match['rt'][1:])
+                label = self.match['label']
+
+                try:
+                    addr = sym_table[label]
+                except KeyError:
+                    exit(f'ERROR: Label "{label}" is not specified')
+
+                instr_binary = f'{op:03b}{rs:03b}{rt:03b}{addr:07b}'
+ 
             case InstructionFormat.JUMP:
+                op = Opcodes.getVal(self.match['op'])
+                addr = self.match['addr']
+
+                try:
+                    addr = sym_table[addr]
+                except KeyError:
+                    exit(f'ERROR: Label "{addr}" is not specified')
+
+                instr_binary = f'{op:03b}{addr:013b}'
                 pass
             case InstructionFormat.NOP:
+                instr_binary = '1110000000000000'
+                pass
+            case InstructionFormat.LOADIMM:
                 pass
             case _:
                 exit("Unexpected instruction format")
@@ -100,18 +139,15 @@ class Opcodes(Enum):
         return uppercase + lowercase
 
     @classmethod
-    def _missing_(cls, value):
-        value = value.upper()
-        for member in cls:
-            if member.upper() == value:
-                return member
-        return None
+    def getVal(cls, name):
+       name = name.upper()
+       return Opcodes[name].value
 
 
 class Funct(Enum):
     """
     Specifies the function of R-Type Instructions.
-    R-Types always have an opcode of 0.
+    R-Types always have an opcode of 0, funct decides their function
     """
 
     ADD = 0x0
@@ -127,12 +163,9 @@ class Funct(Enum):
     SUBC = 0xA
 
     @classmethod
-    def _missing_(cls, value):
-        value = value.upper()
-        for member in cls:
-            if member.upper() == value:
-                return member
-        return None
+    def getVal(cls, name):
+       name = name.upper()
+       return Funct[name].value
 
 class Registers(Enum):
     R0 = 0x0 
@@ -151,19 +184,15 @@ class Registers(Enum):
         return uppercase + lowercase
     
     @classmethod
-    def _missing_(cls, value):
-        value = value.upper()
-        for member in cls:
-            if member.upper() == value:
-                return member
-        return None
-
+    def getVal(cls, name):
+       name = name.upper()
+       return Registers[name].value
 
 class TokenType(Enum):
     RPAREN = r'\)'
     LPAREN = r'\('
 #    DIRECTIVE = rf'.({"|".join(directives)})'
-    OPCODE =  rf'({"|".join(Opcodes.names())})\s+'
+    OPCODE =  rf'({"|".join(Opcodes.names())})'
     REGISTER = rf'\$({"|".join(Registers.names())})'
     NUMBER = r'(-)?(0x)?[0-9]+'
     LABEL = r'\w+:'
@@ -177,7 +206,6 @@ class TokenType(Enum):
     @classmethod
     def token_regex(cls):
         return compile('|'.join([f'(?P<{token.name}>{token.value})' for token in cls]))
-
 
 class InstructionFormat(Enum):
     """
@@ -201,6 +229,17 @@ class InstructionFormat(Enum):
         'x4' : TokenType.NONTOKEN.value
     }
 
+    ARITHLOGI = {
+        'op' : TokenType.OPCODE.value,
+        'x1' : TokenType.SPACE.value,
+        'rs' : TokenType.REGISTER.value,
+        'x2' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
+        'rt' : TokenType.REGISTER.value,
+        'x3' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
+        'imm' : TokenType.NUMBER.value,
+        'x4' : TokenType.NONTOKEN.value
+    }
+
     JUMP = {
         'op' : TokenType.OPCODE.value,
         'x1' : TokenType.SPACE.value,
@@ -210,12 +249,13 @@ class InstructionFormat(Enum):
 
     LOADSTORE = {
         'op' : TokenType.OPCODE.value,
+        'x1' : TokenType.SPACE.value,
         'rs' : TokenType.REGISTER.value, 
         'x2' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
         'imm' : TokenType.NUMBER.value,
-        'x3' : TokenType.LPAREN.value,        
+        'x3' : f'{TokenType.LPAREN.value}{TokenType.SPACE.value}',        
         'rt' : TokenType.REGISTER.value,
-        'x4' : f'{TokenType.RPAREN.value}'
+        'x4' : f'{TokenType.RPAREN.value}{TokenType.SPACE.value}',        
     }
 
     LOADIMM = {
@@ -229,9 +269,9 @@ class InstructionFormat(Enum):
     BRANCH ={
         'op' : TokenType.OPCODE.value,
         'x1' : TokenType.SPACE.value,
-        'rd' : TokenType.REGISTER.value,
-        'x2' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
         'rs' : TokenType.REGISTER.value,
+        'x2' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
+        'rt' : TokenType.REGISTER.value,
         'x3' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
         'label' : TokenType.LABEL_CALL.value,
         'x4' : TokenType.NONTOKEN.value

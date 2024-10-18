@@ -1,0 +1,9 @@
+loop: beq $r0, $r1, loop
+	beq $r0, $r1, loop
+f:	beq $r0, $r1, loop
+	beq $r0, $r1, loop
+	beq $r0, $r1, f
+	beq $r0, $r1, loop
+	beq $r0, $r1, loop
+	beq $r0, $r1, loop
+
