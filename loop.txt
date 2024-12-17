@@ -1,0 +1,15 @@
+
+
+addi $r1, $r1, 32
+NOP
+NOP
+NOP
+
+loop: beq $r0, $r1, end
+	  addi $r1, $r1, -1
+	  addi $r2, $r2, 2
+	  add $r3, $r3, $r1
+	  sw $r1, 0($r1)
+	  j loop
+
+end: j end

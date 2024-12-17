@@ -5,17 +5,29 @@ from re import compile
 def toBinary(num, bit_size):
       return format(num, f':0{b}') 
 
+def int_to_twos_complement(num, bits):
+    if num >= 0:
+        return bin(num)[2:].zfill(bits)
+    return bin((1 << bits) + num)[2:]
+
 class Instruction():
     def __init__(self, format, match, label = None):
         self.format = format
         self.match = match
         self.label = label  
+        self.addr = Memory.assign()
         
     def __str__(self):
+        instr_str = ""
+
+        for x in self.match.values():
+            instr_str += x 
+
         if self.label is not None:
-            return f'{self.label} {self.match}'
+            return f'{self.label}: {instr_str.strip()}'
+#            return f'{self.label} {self.match} : {self.addr}'
         else:
-            return f'{self.match}'
+            return f'{instr_str.strip()}'
 
     def generateBytecode(self, sym_table):
         instr_binary = "000000000000000"
@@ -34,7 +46,11 @@ class Instruction():
                 rt = Registers.getVal(self.match['rt'][1:])
                 imm = int(self.match['imm'])
 
-                instr_binary = f'{op:03b}{rs:03b}{rt:03b}{imm:07b}'
+                if imm > 127:
+                    exit(f"ERROR: immediate {imm} is too big")
+                
+                imm = int_to_twos_complement(imm, 7)
+                instr_binary = f'{op:03b}{rs:03b}{rt:03b}{imm}'
             case InstructionFormat.LOADSTORE:
                 op = Opcodes.getVal(self.match['op'])
                 rs = Registers.getVal(self.match['rs'][1:])
@@ -53,7 +69,11 @@ class Instruction():
                 except KeyError:
                     exit(f'ERROR: Label "{label}" is not specified')
 
-                instr_binary = f'{op:03b}{rs:03b}{rt:03b}{addr:07b}'
+                imm = (addr - (self.addr +2)) >> 1
+
+                imm = int_to_twos_complement(imm, 7)
+
+                instr_binary = f'{op:03b}{rs:03b}{rt:03b}{imm}'
  
             case InstructionFormat.JUMP:
                 op = Opcodes.getVal(self.match['op'])
@@ -64,17 +84,20 @@ class Instruction():
                 except KeyError:
                     exit(f'ERROR: Label "{addr}" is not specified')
 
-                instr_binary = f'{op:03b}{addr:013b}'
-                pass
+                imm = (addr >> 1)
+
+                imm = int_to_twos_complement(imm, 13)
+
+                instr_binary = f'{op:03b}{imm}'
             case InstructionFormat.NOP:
                 instr_binary = '1110000000000000'
-                pass
             case InstructionFormat.LOADIMM:
-                pass
+                print("WARNING: LOADIMM instructions not implemented. Skipping")
+                print(f'{self.match["op"]}')
             case _:
                 exit("Unexpected instruction format")
 
-        return instr_binary 
+        return f'"{instr_binary}";' + f'  -- {self}' 
 
 class Program():
     def __init__(self, instructions):
@@ -101,6 +124,13 @@ class Program():
         return l
                 
 
+class Memory():
+    ADDRESS = 0
+
+    @classmethod
+    def assign(cls):
+        cls.ADDRESS += 2
+        return cls.ADDRESS - 2
 
 
 class Opcodes(Enum):
@@ -108,23 +138,23 @@ class Opcodes(Enum):
     # R-Type
     ADD = 0x0
     SUB = 0x0
-    ADC = 0x0
-    SUBC = 0x0
     SLLV = 0x0
     SLRV = 0x0
+    SRAV = 0x0
     AND = 0x0
-    OR = 0X0
-    NAND = 0X0
-    NOR = 0X0 
-    SLT = 0X0
+    OR = 0x0
+    NAND = 0x0
+    NOR = 0x0
+    SLT = 0x0
+    ADC = 0x0
+    SUBC = 0x0
 
     # I-Type
-    ADDI = 0x0
-    LI = 0x1
+    ADDI = 0x1
     LW = 0X2
     SW = 0x3
-    BEQ = 0X4
-    BLT = 0X5
+    SLL = 0x4
+    BEQ = 0X5
 
     # J-Type
     J = 0X6
@@ -154,13 +184,14 @@ class Funct(Enum):
     SUB = 0x1
     SLLV = 0x2
     SLRV = 0x3
-    AND = 0x4
-    OR = 0x5
-    NAND = 0x6
-    NOR = 0x7
-    SLT = 0x8
-    ADC = 0x9
-    SUBC = 0xA
+    SRAV = 0x4
+    AND = 0x5
+    OR = 0x6
+    NAND = 0x7
+    NOR = 0x8
+    SLT = 0xA
+    ADC = 0xB
+    SUBC = 0xC
 
     @classmethod
     def getVal(cls, name):
@@ -198,7 +229,8 @@ class TokenType(Enum):
     LABEL = r'\w+:'
     LABEL_CALL = r'\w+'
     SPACE = r'\s*'
-    NONTOKEN = r'(\n)|(\s+)|(#.*|;.*|@.*)'
+    COMMENT = r'(#.*)|(;.*)|(@.*)'
+    NONTOKEN = r'(\n)|(\s+)'
     STRING = r'".*"'
     COMMA = r','
     ERROR = r'.*'
@@ -232,9 +264,9 @@ class InstructionFormat(Enum):
     ARITHLOGI = {
         'op' : TokenType.OPCODE.value,
         'x1' : TokenType.SPACE.value,
-        'rs' : TokenType.REGISTER.value,
-        'x2' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
         'rt' : TokenType.REGISTER.value,
+        'x2' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
+        'rs' : TokenType.REGISTER.value,
         'x3' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
         'imm' : TokenType.NUMBER.value,
         'x4' : TokenType.NONTOKEN.value
@@ -250,16 +282,17 @@ class InstructionFormat(Enum):
     LOADSTORE = {
         'op' : TokenType.OPCODE.value,
         'x1' : TokenType.SPACE.value,
-        'rs' : TokenType.REGISTER.value, 
+        'rt' : TokenType.REGISTER.value, 
         'x2' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
         'imm' : TokenType.NUMBER.value,
         'x3' : f'{TokenType.LPAREN.value}{TokenType.SPACE.value}',        
-        'rt' : TokenType.REGISTER.value,
+        'rs' : TokenType.REGISTER.value,
         'x4' : f'{TokenType.RPAREN.value}{TokenType.SPACE.value}',        
     }
 
     LOADIMM = {
         'op' : TokenType.OPCODE.value,
+        'x1' : TokenType.SPACE.value,
         'rs' : TokenType.REGISTER.value, 
         'x2' : f'{TokenType.SPACE.value}{TokenType.COMMA.value}{TokenType.SPACE.value}',
         'imm' : TokenType.NUMBER.value,

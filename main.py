@@ -21,11 +21,19 @@ if __name__ == "__main__":
         if l is not None:
             instructions.append(l)
 
-#    for instr in instructions:
-#        if instr is not None:
-#            print(instr)
-
     prog = Program(instructions)
-    print("\n".join(prog.generateBytecode()))
 
+    print("-- Source --")
+    print("".join(source_file))
+    print("-- Machine Code --")
+
+
+    with open(args.output, 'w') as f:
+        for line in prog.generateBytecode():
+            f.write(line + '\n')
+
+    # So I can copy contents directly into instruction memory
+    for i, line in enumerate(prog.generateBytecode()):        
+        print(f'Memory({i}) <='  + f' {line}')
+    
 

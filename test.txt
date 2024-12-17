@@ -1,0 +1,13 @@
+addi $r1, $r0, 5
+NOP
+NOP
+NOP
+
+loop: beq $r0, $r1, end
+	addi $r1, $r1, -1	
+	addi $r2, $r2, 1
+	addi $r3, $r3, 2
+	j loop
+	NOP
+end: j end
+

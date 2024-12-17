@@ -1,0 +1,191 @@
+#Step 1: store all numbers into memory
+
+# 0x0040
+addi $r1, $r1, 32
+sll $r1, $r1, 1
+NOP
+NOP
+NOP
+sw $r1, 0($r0)
+sub $r1, $r1, $r1
+
+# 0x1010
+addi $r1, $r1, 32
+sll $r1, $r1, 7
+addi $r1, $r1, 16
+NOP
+NOP
+NOP
+sw $r1, 1($r0)
+sub $r1, $r1, $r1
+
+# 0x000F
+addi $r1, $r1, 15
+NOP
+NOP
+NOP
+sw $r1, 2($r0)
+sub $r1, $r1, $r1
+
+#0x00f0
+addi $r1, $r1, 30
+sll $r1, $r1, 3
+NOP
+NOP
+NOP
+sw $r1, 3($r0)
+sub $r1, $r1, $r1
+
+
+# 0x0000
+sw $r0, 4($r0)
+
+# 0x0010
+addi $r1, $r1, 16
+NOP
+NOP
+NOP
+sw $r1, 5($r0)
+sub $r1, $r1, $r1
+
+# 0x0005
+addi $r1, $r1, 5
+NOP
+NOP
+NOP
+sw $r1, 6($r0)
+
+addi $r2, $r2, 16
+
+
+# STEP 2: Load initial values into memory
+
+# Mem[$r2] =   0x0101
+# Mem[$r2+2] = 0x0110
+# Mem[$r2+4] = 0x0011
+# Mem[$r2+6] = 0x00F0
+# Mem[$r2+8] = 0x00FF
+
+# Mem[$r2] =   0x0101
+addi $r3, $r3, 32
+sll $r3, $r3, 3
+addi $r3, $r3, 1
+NOP
+NOP
+NOP
+sw $r3, 0($r2)
+
+# Mem[$r2+2] = 0x0110
+addi $r3, $r3, 15
+NOP
+NOP
+NOP
+sw $r3, 1($r2)
+sub $r3, $r3, $r3
+
+# Mem[$r2+4] = 0x0011
+addi $r3, $r3, 17
+NOP
+NOP
+NOP
+sw $r3, 2($r2)
+sub $r3, $r3, $r3
+
+
+# Mem[$r2+6] = 0x00F0
+addi $r3, $r3, 60
+sll $r3, $r3, 2
+NOP
+NOP
+NOP
+sw $r3, 3($r2)
+sub $r3, $r3, $r3
+
+
+# Mem[$r2+8] = 0x00FF
+addi $r3, $r3, 60
+sll $r3, $r3, 2
+addi $r3, $r3, 15
+NOP
+NOP
+NOP
+sw $r3, 4($r2)
+
+
+
+loop: beq $r1, $r0, end
+	
+	   addi $r1, $r1, -1
+	   lw $r3, 0($r2)      
+
+	   # Save 0x0100 in r4 for comparing to r3	
+	   sub $r4, $r4, $r4  
+	   addi $r4, $r4, 32
+	   sll $r4, $r4, 3
+	   slt $r5, $r3, $r4
+	   NOP
+	   NOP
+	   NOP
+	   
+if:	  NOP
+	  beq $r5, $r0, else
+
+	  lw $r4, 0($r0)
+	  lw $r5, 1($r0)
+	  NOP
+	  NOP
+	  addi $r7, $r0, 3
+	  NOP
+	  NOP
+	  NOP
+	  slrv $r4, $r4, $r7
+	  or $r5, $r5, $r4
+		
+	  # set r7 to 0xff00, save into memory	
+	  addi $r7, $r0, 63
+	  NOP
+	  NOP
+	  NOP
+	  sll $r7, $r7, 10
+	  addi $r6, $r0, 48
+	  sll $r6, $r6, 4
+	  NOP
+	  NOP
+	  NOP
+	  add $r7, $r7, $r6
+	  NOP
+	  NOP
+	  NOP
+	  sw $r4, 0($r0)
+	  sw $r5, 1($r0)
+	  sw $r7, 0($r2)
+	  addi $r2, $r2, 1
+	  j loop
+	  NOP
+
+else: NOP
+	  lw $r4, 2($r0)
+	  lw $r5, 3($r0)
+	  NOP
+	  NOP
+	  NOP
+	  sll $r4, $r4, 2
+	  xor $r5, $r5, $r4
+	
+	  addi $r7, $r0, 63
+	  sll $r7, $r7, 2
+	  addi $r7, $r7, 3
+	  NOP
+	  NOP
+	  NOP
+	  sw $r4, 2($r0)
+	  sw $r5, 3($r0)
+	  sw $r7, 0($r2)
+
+	  addi $r2, $r2, 1
+	  j loop
+	  NOP
+	  NOP
+	  NOP
+
+end: j end

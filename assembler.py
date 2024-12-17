@@ -5,7 +5,6 @@ from re import compile, finditer, findall
 class TokenType(Enum):
     RPAREN = r'\)'
     LPAREN = r'\('
-#    DIRECTIVE = rf'.({"|".join(directives)})'
     OPCODE =  rf'({"|".join(Opcodes.names())})\s+'
     REGISTER = rf'\$({"|".join(Registers.names())})'
     NUMBER = r'(-)?(0x)?[0-9]+'
@@ -92,15 +91,9 @@ class InstructionFormat(Enum):
     @classmethod
     def whole_regex(cls):
         return { str(name) : InstructionFormat.compile_regex(name) for name in cls.__members__}
-        #return compile('|'.join([f'(?P<{format.name}>{InstructionFormat.compile_regex(format)})' for format in cls]))
 
 
 def instructionize(line, line_num):
-
-    """
-        PC + 2 for 16-bit CPU
-        Labels compile to binary for labeled instruction
-    """
 
     formats = [
         InstructionFormat.LABEL,
@@ -120,13 +113,10 @@ def instructionize(line, line_num):
                if tok_type == 'ERROR':
                    exit(f"[Scanner Error] Unexpected input {tok_val} on line {line_num}")
 
-               #Debug print, enable with cli option later
-               #print(f"[Token] {tok_type} {tok_val}")
                break
 
     for format in formats:
         for match in finditer(InstructionFormat.compile_regex(format),line):
             print(format, match)
-            #return Instruction(format, match)
 
 
