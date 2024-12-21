@@ -1,32 +1,14 @@
-#shitty test program
+addi $r1, $r1, 5
+NOP
+NOP
+NOP
 
-li $r0, 0
-li $r1, 50
-
-
-loop: beq $r0, $r1, end
-	
-	lw $r0, 3($r2)
-	lw $r0 , 3($r2)
-	lw $r0, 3($r2)
-	lw $r0 , 127($r2)
-	add $r2, $r2, $r4  
-	add $r2, $r2, $r4
-	sllv $r5, $r2, $r0
-	
-	addi $r0, $r0, 1
-	sw $r0, 0 ($r2)
-
-l:	SUBC $r0, $r1, $r6
-
-p:	j loop
-
-
-end:	addi $r2, $r2, 7
+loop: beq $r1, $r0, end
+	addi $r1, $r1, -1
 	NOP
 	NOP
-	lw $r2, 0($r4)
+	NOP
+	NOP
+	j loop
 
-end: 
-     sw $r0, 0($r5)
-	 #yay
+end: j end

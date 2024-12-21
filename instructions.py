@@ -84,7 +84,7 @@ class Instruction():
                 except KeyError:
                     exit(f'ERROR: Label "{addr}" is not specified')
 
-                imm = (addr >> 1)
+                imm = (addr - (self.addr +2)) >> 1
 
                 imm = int_to_twos_complement(imm, 13)
 
